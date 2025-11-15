@@ -1,0 +1,511 @@
+{
+  "meta": {
+    "session_id": "SJTU_SAIF_20251114",
+    "title": "AI应用现状与需求调研",
+    "subtitle": "上海交通大学高级金融学院 MBA 课程",
+    "description": "本问卷将帮助讲师了解您的背景和需求，以便更好地调整课程内容。",
+    "estimated_time_minutes": 3,
+    "total_questions": 10,
+    "required_questions": 9
+  },
+  
+  "questions": [
+    {
+      "id": "q1",
+      "section": "职业与业务画像",
+      "type": "single_choice",
+      "required": true,
+      "question": "您目前主要所在的机构类型是？",
+      "has_other_option": true,
+      "other_option_requires_input": true,
+      "options": [
+        {
+          "value": "bank",
+          "label": "银行（含政策性银行、商业银行）",
+          "analysis_tag": ["传统金融", "银行业"]
+        },
+        {
+          "value": "securities",
+          "label": "证券公司",
+          "analysis_tag": ["资本市场", "证券业"]
+        },
+        {
+          "value": "fund",
+          "label": "基金公司（公募 / 私募 / 资管）",
+          "analysis_tag": ["资产管理", "基金业"]
+        },
+        {
+          "value": "futures",
+          "label": "期货公司",
+          "analysis_tag": ["衍生品", "期货业"]
+        },
+        {
+          "value": "insurance",
+          "label": "保险公司",
+          "analysis_tag": ["传统金融", "保险业"]
+        },
+        {
+          "value": "trust",
+          "label": "信托公司",
+          "analysis_tag": ["资产管理", "信托业"]
+        },
+        {
+          "value": "other_licensed",
+          "label": "其他持牌金融机构（如消费金融、金融租赁、金控集团等）",
+          "analysis_tag": ["持牌机构", "其他金融"]
+        },
+        {
+          "value": "fintech",
+          "label": "金融科技公司（非持牌）",
+          "analysis_tag": ["科技驱动", "金融科技"]
+        },
+        {
+          "value": "other",
+          "label": "其他行业",
+          "requires_input": true,
+          "input_placeholder": "请填写您所在的行业",
+          "analysis_tag": ["非金融"]
+        }
+      ],
+      "db_field": "q1_industry",
+      "db_type": "VARCHAR(50)",
+      "db_field_other": "q1_industry_other",
+      "db_type_other": "VARCHAR(100)"
+    },
+    
+    {
+      "id": "q2",
+      "section": "职业与业务画像",
+      "type": "single_choice",
+      "required": true,
+      "question": "您目前在机构中的主要工作方向是？",
+      "help_text": "请选择最贴近的一项",
+      "has_other_option": true,
+      "other_option_requires_input": true,
+      "options": [
+        {
+          "value": "corporate",
+          "label": "对公 / 公司金融业务",
+          "analysis_tag": ["业务前台", "B2B"]
+        },
+        {
+          "value": "retail",
+          "label": "对私 / 零售 / 财富管理",
+          "analysis_tag": ["业务前台", "B2C"]
+        },
+        {
+          "value": "investment",
+          "label": "投研 / 交易 / 资产管理",
+          "analysis_tag": ["投资决策", "专业条线"]
+        },
+        {
+          "value": "risk",
+          "label": "风控 / 合规 / 法务 / 审计",
+          "analysis_tag": ["风控合规", "中台"]
+        },
+        {
+          "value": "ops",
+          "label": "运营 / 中后台支持",
+          "analysis_tag": ["运营支持", "中后台"]
+        },
+        {
+          "value": "product",
+          "label": "产品 / 项目 / 业务规划",
+          "analysis_tag": ["战略规划", "中台"]
+        },
+        {
+          "value": "tech",
+          "label": "科技 / IT / 数据 / 基础设施",
+          "analysis_tag": ["技术条线", "后台"]
+        },
+        {
+          "value": "other",
+          "label": "其他",
+          "requires_input": true,
+          "input_placeholder": "请填写您的工作方向",
+          "analysis_tag": ["其他岗位"]
+        }
+      ],
+      "db_field": "q2_role",
+      "db_type": "VARCHAR(50)",
+      "db_field_other": "q2_role_other",
+      "db_type_other": "VARCHAR(100)"
+    },
+    
+    {
+      "id": "q3",
+      "section": "个人数字化与AI能力",
+      "type": "single_choice",
+      "required": true,
+      "question": "您平时在工作中使用数字工具的习惯更接近哪一项？",
+      "options": [
+        {
+          "value": 1,
+          "label": "主要使用 Office 等基础工具完成工作",
+          "analysis_tag": ["基础用户", "工具使用者"],
+          "capability_level": "basic"
+        },
+        {
+          "value": 2,
+          "label": "会用 Excel 高级功能（数据透视、复杂公式等）或简单的 BI 报表",
+          "analysis_tag": ["进阶用户", "工具使用者"],
+          "capability_level": "intermediate"
+        },
+        {
+          "value": 3,
+          "label": "会使用 SQL 查询数据，或用 Python/VBA 等写简单脚本",
+          "analysis_tag": ["技术型用户", "工具创造者"],
+          "capability_level": "advanced"
+        },
+        {
+          "value": 4,
+          "label": "能独立搭建小工具或自动化流程（如 RPA、低代码平台等）",
+          "analysis_tag": ["专家用户", "工具创造者"],
+          "capability_level": "expert"
+        }
+      ],
+      "db_field": "q3_digital_habit",
+      "db_type": "INTEGER"
+    },
+    
+    {
+      "id": "q4",
+      "section": "个人数字化与AI能力",
+      "type": "single_choice",
+      "required": true,
+      "question": "您认为自己目前在 AI 应用上更接近哪种状态？",
+      "options": [
+        {
+          "value": 1,
+          "label": "好奇观望：知道 AI 很火，但还没找到切入点",
+          "analysis_tag": ["观望型", "认知阶段"],
+          "maturity_stage": "awareness"
+        },
+        {
+          "value": 2,
+          "label": "个人用户：自己在用，但还没想过怎么在团队推广",
+          "analysis_tag": ["个人实践", "使用阶段"],
+          "maturity_stage": "personal_use"
+        },
+        {
+          "value": 3,
+          "label": "场景探索：正在寻找适合自己业务的落地场景",
+          "analysis_tag": ["场景探索", "试点阶段"],
+          "maturity_stage": "exploration"
+        },
+        {
+          "value": 4,
+          "label": "推动落地：正在或准备推动部门/机构的 AI 项目",
+          "analysis_tag": ["推动者", "落地阶段"],
+          "maturity_stage": "implementation"
+        }
+      ],
+      "db_field": "q4_ai_self_position",
+      "db_type": "INTEGER"
+    },
+    
+    {
+      "id": "q5",
+      "section": "个人数字化与AI能力",
+      "type": "single_choice",
+      "required": true,
+      "question": "您目前使用 AI / 大模型类工具（如 ChatGPT、国内大模型等）的情况？",
+      "options": [
+        {
+          "value": 1,
+          "label": "还没怎么用过，或偶尔尝试但没形成习惯",
+          "analysis_tag": ["未使用", "入门前"],
+          "usage_frequency": "none"
+        },
+        {
+          "value": 2,
+          "label": "偶尔用来查资料、润色文案、写邮件 / 汇报",
+          "analysis_tag": ["轻度使用", "基础应用"],
+          "usage_frequency": "occasional"
+        },
+        {
+          "value": 3,
+          "label": "经常使用，已经有固定的提示词 / 模板辅助日常工作",
+          "analysis_tag": ["高频使用", "深度应用"],
+          "usage_frequency": "frequent"
+        },
+        {
+          "value": 4,
+          "label": "除了日常办公，还会用 AI 做分析、设计方案或梳理流程",
+          "analysis_tag": ["专业用户", "战略应用"],
+          "usage_frequency": "power_user"
+        },
+        {
+          "value": 5,
+          "label": "在团队内部推动 AI 的使用（培训、推广、制定规范等）",
+          "analysis_tag": ["组织推动者", "领导应用"],
+          "usage_frequency": "evangelist"
+        }
+      ],
+      "db_field": "q5_ai_usage",
+      "db_type": "INTEGER"
+    },
+    
+    {
+      "id": "q6",
+      "section": "组织AI阶段与个人角色",
+      "type": "single_choice",
+      "required": true,
+      "question": "从您的观察看，您所在的机构在 AI / 大模型应用上的阶段更接近？",
+      "options": [
+        {
+          "value": 1,
+          "label": "主要还在调研和讨论阶段，暂时没有正式项目",
+          "analysis_tag": ["探索期", "0→1前"],
+          "org_maturity": "research"
+        },
+        {
+          "value": 2,
+          "label": "某些部门或团队在做小范围试点",
+          "analysis_tag": ["试点期", "0→1中"],
+          "org_maturity": "pilot"
+        },
+        {
+          "value": 3,
+          "label": "已经在多个业务场景中有稳定使用",
+          "analysis_tag": ["扩展期", "1→N"],
+          "org_maturity": "scaling"
+        },
+        {
+          "value": 4,
+          "label": "有比较清晰的整体规划或统一平台，正在推进落地",
+          "analysis_tag": ["平台化", "N→系统"],
+          "org_maturity": "platform"
+        },
+        {
+          "value": 5,
+          "label": "不方便判断 / 不确定",
+          "analysis_tag": ["未知"],
+          "org_maturity": "unknown"
+        }
+      ],
+      "db_field": "q6_org_stage",
+      "db_type": "INTEGER"
+    },
+    
+    {
+      "id": "q7",
+      "section": "组织AI阶段与个人角色",
+      "type": "single_choice",
+      "required": true,
+      "question": "您个人在机构内与 AI / 数字化相关项目中的角色更接近哪一项？",
+      "options": [
+        {
+          "value": 1,
+          "label": "使用者：主要是使用现有工具完成工作",
+          "analysis_tag": ["使用者", "执行层"],
+          "role_type": "user"
+        },
+        {
+          "value": 2,
+          "label": "参与者：参与过相关项目的讨论 / 需求 / 试点",
+          "analysis_tag": ["参与者", "协作层"],
+          "role_type": "participant"
+        },
+        {
+          "value": 3,
+          "label": "推动者：负责或协助推动本部门的相关项目落地",
+          "analysis_tag": ["推动者", "决策层"],
+          "role_type": "driver"
+        },
+        {
+          "value": 4,
+          "label": "观察者：目前未直接参与相关项目，但会关注相关信息",
+          "analysis_tag": ["观察者", "学习层"],
+          "role_type": "observer"
+        }
+      ],
+      "db_field": "q7_personal_role",
+      "db_type": "INTEGER"
+    },
+    
+    {
+      "id": "q8",
+      "section": "业务优先级与痛点",
+      "type": "multiple_choice",
+      "required": true,
+      "question": "您日常工作中，最希望 AI 帮忙减负的场景是？",
+      "help_text": "多选，建议选 1-3 项",
+      "min_selections": 1,
+      "max_selections": 3,
+      "options": [
+        {
+          "value": "report_integration",
+          "label": "定期报表整合（每周/月整合多份数据、发送给不同对象）",
+          "analysis_tag": ["效率提升", "报表类"],
+          "scenario_category": "reporting"
+        },
+        {
+          "value": "doc_writing",
+          "label": "周报/月报撰写（格式化文档、总结性材料）",
+          "analysis_tag": ["效率提升", "文档类"],
+          "scenario_category": "content_generation"
+        },
+        {
+          "value": "research_reading",
+          "label": "研报/公告快速阅读（信息量大、需提取关键点）",
+          "analysis_tag": ["效率提升", "信息处理"],
+          "scenario_category": "information_processing"
+        },
+        {
+          "value": "customer_qa",
+          "label": "客户问题答疑（重复性问题多、响应压力大）",
+          "analysis_tag": ["业务增长", "客户侧"],
+          "scenario_category": "customer_facing"
+        },
+        {
+          "value": "compliance_review",
+          "label": "合规/风控审查（文档多、时间紧、标准复杂）",
+          "analysis_tag": ["风险控制", "合规类"],
+          "scenario_category": "risk_management"
+        },
+        {
+          "value": "data_reconciliation",
+          "label": "数据核对/对账（人工比对易出错、效率低）",
+          "analysis_tag": ["效率提升", "数据类"],
+          "scenario_category": "data_processing"
+        },
+        {
+          "value": "policy_search",
+          "label": "内部制度查询（文档分散、查找困难）",
+          "analysis_tag": ["知识管理", "查询类"],
+          "scenario_category": "knowledge_management"
+        },
+        {
+          "value": "code_dev",
+          "label": "代码/脚本开发（需要技术辅助但不是专业开发人员）",
+          "analysis_tag": ["技术赋能", "开发类"],
+          "scenario_category": "development"
+        },
+        {
+          "value": "none",
+          "label": "目前暂时没有特别明确的痛点",
+          "analysis_tag": ["待探索"],
+          "scenario_category": "undefined"
+        }
+      ],
+      "db_field": "q8_pain_points",
+      "db_type": "TEXT[]"
+    },
+    
+    {
+      "id": "q9",
+      "section": "态度与期待",
+      "type": "single_choice",
+      "required": true,
+      "question": "在 AI 应用这件事上，您目前的真实感受更接近？",
+      "options": [
+        {
+          "value": 1,
+          "label": "兴奋期待：觉得机会很大，想尽快尝试",
+          "analysis_tag": ["积极主动", "高意愿"],
+          "sentiment": "excited"
+        },
+        {
+          "value": 2,
+          "label": "理性乐观：看好长期价值，但需要找准切入点",
+          "analysis_tag": ["理性务实", "中高意愿"],
+          "sentiment": "optimistic"
+        },
+        {
+          "value": 3,
+          "label": "谨慎观望：有兴趣，但担心风险或投入产出",
+          "analysis_tag": ["保守谨慎", "中低意愿"],
+          "sentiment": "cautious"
+        },
+        {
+          "value": 4,
+          "label": "被动应对：觉得是趋势，不得不了解，但动力不强",
+          "analysis_tag": ["被动消极", "低意愿"],
+          "sentiment": "passive"
+        },
+        {
+          "value": 5,
+          "label": "存在顾虑：对数据安全、合规、可控性等有明确担忧",
+          "analysis_tag": ["风险敏感", "有顾虑"],
+          "sentiment": "concerned"
+        }
+      ],
+      "db_field": "q9_attitude",
+      "db_type": "INTEGER"
+    },
+    
+    {
+      "id": "q10",
+      "section": "补充信息（可选）",
+      "type": "multiple_choice",
+      "required": false,
+      "question": "在您所在的机构推进 AI 应用时，您认为最大的现实约束是什么？",
+      "help_text": "可选题，可多选",
+      "options": [
+        {
+          "value": "data_security",
+          "label": "数据安全与合规要求",
+          "analysis_tag": ["合规约束", "安全风险"]
+        },
+        {
+          "value": "it_resource",
+          "label": "IT / 技术资源有限，排期紧张",
+          "analysis_tag": ["资源约束", "技术瓶颈"]
+        },
+        {
+          "value": "user_adoption",
+          "label": "业务部门的接受度和使用习惯",
+          "analysis_tag": ["组织文化", "变革阻力"]
+        },
+        {
+          "value": "unclear_scenario",
+          "label": "缺乏明确的业务场景和试点方向",
+          "analysis_tag": ["战略模糊", "场景缺失"]
+        },
+        {
+          "value": "roi_uncertain",
+          "label": "投入产出不确定，上层决策谨慎",
+          "analysis_tag": ["商业价值", "决策犹豫"]
+        },
+        {
+          "value": "low_priority",
+          "label": "目前感知不强，AI 还不是优先事项",
+          "analysis_tag": ["优先级低", "紧迫性弱"]
+        },
+        {
+          "value": "other",
+          "label": "其他",
+          "analysis_tag": ["其他约束"]
+        }
+      ],
+      "db_field": "q10_constraints",
+      "db_type": "TEXT[]"
+    }
+  ],
+  
+  "submission": {
+    "success_message": "提交成功！感谢您的参与，您的反馈将帮助我们提供更有针对性的内容。",
+    "redirect_url": null,
+    "allow_multiple_submissions": false,
+    "track_completion_time": true
+  },
+  
+  "analytics": {
+    "segmentation_dimensions": [
+      "q1_industry",
+      "q2_role",
+      "q3_digital_habit",
+      "q4_ai_self_position",
+      "q5_ai_usage",
+      "q6_org_stage",
+      "q7_personal_role",
+      "q9_attitude"
+    ],
+    "priority_mapping": {
+      "q8_pain_points": "scenario_recommendations"
+    },
+    "sentiment_field": "q9_attitude"
+  }
+}
+

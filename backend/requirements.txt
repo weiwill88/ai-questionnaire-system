@@ -1,0 +1,22 @@
+# FastAPI核心
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+python-multipart==0.0.6
+
+# Supabase客户端（需要最新版以支持所有功能）
+supabase>=2.24.0
+websockets>=15.0
+
+# 数据验证
+pydantic==2.5.0
+pydantic-settings==2.1.0
+
+# 环境变量管理
+python-dotenv==1.0.0
+
+# CORS支持
+python-jose[cryptography]==3.3.0
+
+# 工具库（版本由supabase决定）
+# httpx会被supabase自动安装，版本<0.25.0
+

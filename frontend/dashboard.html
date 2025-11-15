@@ -1,0 +1,1403 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI应用需求调研 - 管理后台</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/countup.js@2.6.2/dist/countUp.umd.js"></script>
+    <style>
+        /* 专业BI风格 - 渐变配色 */
+        .gradient-blue {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .gradient-green {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        .gradient-purple {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+        .gradient-orange {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+        }
+        
+        /* Tab选项卡样式 */
+        .tab-btn {
+            padding: 1rem 1.5rem;
+            font-weight: 600;
+            font-size: 1rem;
+            color: #6b7280;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+            background: transparent;
+            cursor: pointer;
+            white-space: nowrap;
+            flex: 1;
+            text-align: center;
+        }
+        .tab-btn.active {
+            color: #2563eb;
+            border-bottom-color: #2563eb;
+            background: rgba(37, 99, 235, 0.05);
+        }
+        .tab-btn:hover:not(.active) {
+            color: #111827;
+            background: #f9fafb;
+        }
+        
+        /* 数字动画 */
+        @keyframes countUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .stat-number {
+            animation: countUp 0.6s ease-out;
+        }
+        
+        /* 卡片阴影 */
+        .card-shadow {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        .card-shadow:hover {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        
+        /* Loading动画 */
+        .loading-spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+
+<!-- ===== 配置区域 ===== -->
+<script>
+const CONFIG = {
+    SUPABASE_URL: 'https://rnidqivrrsbcemywpryk.supabase.co',
+    SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJuaWRxaXZycnNiY2VteXdwcnlrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMwOTcwNzUsImV4cCI6MjA3ODY3MzA3NX0.TN8eCSMXAQM6mQcrzIw7ZlkE1d2Z7UZm_I0lYsI3Tek',
+    SESSION_ID: 'SJTU_SAIF_20251114',
+    API_BASE_URL: 'http://localhost:8000'
+};
+
+// 全局变量
+let supabase;
+let statsData = null;
+let analysisData = null;
+let charts = {};
+</script>
+
+<div class="min-h-screen">
+    <!-- 顶部导航栏 -->
+    <header class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900">AI应用需求调研 - 实时管理后台</h1>
+                    <p class="text-sm text-gray-500 mt-1">上海交通大学高级金融学院 MBA 课程</p>
+                </div>
+                <div class="flex gap-3">
+                    <button onclick="refreshData()" class="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+                        🔄 刷新
+                    </button>
+                    <button onclick="exportData()" class="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+                        📥 导出CSV
+                    </button>
+                    <button onclick="closeSession()" class="px-4 py-2 bg-red-50 border border-red-200 text-red-600 rounded-lg hover:bg-red-100 transition">
+                        ⛔ 关闭场次
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="max-w-7xl mx-auto px-6 py-6">
+        
+        <!-- Tab选项卡导航 -->
+        <div class="bg-white rounded-lg shadow mb-6 overflow-hidden">
+            <div class="flex border-b" style="display: flex; width: 100%;">
+                <button class="tab-btn active" onclick="switchTab('overview')" id="tab-overview" style="flex: 1;">
+                    <span class="text-lg">📊</span>
+                    <span class="ml-2">实时概览</span>
+                </button>
+                <button class="tab-btn" onclick="switchTab('analysis')" id="tab-analysis" style="flex: 1;">
+                    <span class="text-lg">📈</span>
+                    <span class="ml-2">详细分析</span>
+                </button>
+                <button class="tab-btn" onclick="switchTab('ai')" id="tab-ai" style="flex: 1;">
+                    <span class="text-lg">🤖</span>
+                    <span class="ml-2">AI报告</span>
+                </button>
+                <button class="tab-btn" onclick="switchTab('manage')" id="tab-manage" style="flex: 1;">
+                    <span class="text-lg">⚙️</span>
+                    <span class="ml-2">数据管理</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- ========== Tab 1: 实时概览 ========== -->
+        <div id="content-overview" class="tab-content">
+            
+            <!-- 统计卡片区 - 大卡片带渐变 -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                
+                <!-- 卡片1: 已填写人数 -->
+                <div class="bg-white rounded-xl card-shadow p-6 transition-all duration-300 hover:scale-105">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="w-12 h-12 rounded-full gradient-blue flex items-center justify-center text-2xl">
+                            📝
+                        </div>
+                        <span id="new-badge" class="text-xs bg-green-100 text-green-600 px-3 py-1 rounded-full font-semibold hidden">NEW</span>
+                    </div>
+                    <div class="text-gray-500 text-sm font-medium">已填写人数</div>
+                    <div class="text-5xl font-bold text-gray-900 mt-2 stat-number">
+                        <span id="total-count">0</span>
+                    </div>
+                    <div class="text-xs text-gray-400 mt-2">实时更新</div>
+                </div>
+
+                <!-- 卡片2: 平均用时 -->
+                <div class="bg-white rounded-xl card-shadow p-6 transition-all duration-300 hover:scale-105">
+                    <div class="w-12 h-12 rounded-full gradient-purple flex items-center justify-center text-2xl mb-4">
+                        ⏱️
+                    </div>
+                    <div class="text-gray-500 text-sm font-medium">平均完成时间</div>
+                    <div class="text-5xl font-bold text-gray-900 mt-2 stat-number">
+                        <span id="avg-time">0</span><span class="text-2xl text-gray-500 ml-1">秒</span>
+                    </div>
+                    <div class="text-xs text-gray-400 mt-2">
+                        范围: <span id="min-time">-</span> ~ <span id="max-time">-</span>秒
+                    </div>
+                </div>
+
+                <!-- 卡片3: 最热门痛点 -->
+                <div class="bg-white rounded-xl card-shadow p-6 transition-all duration-300 hover:scale-105">
+                    <div class="w-12 h-12 rounded-full gradient-orange flex items-center justify-center text-2xl mb-4">
+                        🔥
+                    </div>
+                    <div class="text-gray-500 text-sm font-medium">TOP 1 痛点</div>
+                    <div class="text-xl font-bold text-gray-900 mt-2 leading-tight" id="top-pain" style="min-height: 3rem;">
+                        加载中...
+                    </div>
+                    <div class="text-xs text-gray-400 mt-2">
+                        <span id="top-pain-count">0</span> 人选择
+                    </div>
+                </div>
+
+                <!-- 卡片4: 最新提交 -->
+                <div class="bg-white rounded-xl card-shadow p-6 transition-all duration-300 hover:scale-105">
+                    <div class="w-12 h-12 rounded-full gradient-green flex items-center justify-center text-2xl mb-4">
+                        🕐
+                    </div>
+                    <div class="text-gray-500 text-sm font-medium">最新提交</div>
+                    <div class="text-2xl font-bold text-gray-900 mt-2" id="latest-time">
+                        等待中...
+                    </div>
+                    <div class="text-xs text-gray-400 mt-2" id="status-text">
+                        实时监控中
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- 核心图表 - 2x2布局 -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                
+                <!-- 行业分布 -->
+                <div class="bg-white rounded-xl card-shadow p-6">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4">📊 行业分布</h3>
+                    <div id="chart-industry" style="height: 320px;"></div>
+                </div>
+
+                <!-- 角色分布 -->
+                <div class="bg-white rounded-xl card-shadow p-6">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4">👔 职位角色</h3>
+                    <div id="chart-role" style="height: 320px;"></div>
+                </div>
+
+                <!-- 痛点热力图 -->
+                <div class="bg-white rounded-xl card-shadow p-6">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4">🎯 痛点场景分布</h3>
+                    <div id="chart-pain" style="height: 320px;"></div>
+                </div>
+
+                <!-- AI态度分布 -->
+                <div class="bg-white rounded-xl card-shadow p-6">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4">💭 对AI的态度</h3>
+                    <div id="chart-attitude" style="height: 320px;"></div>
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- ========== Tab 2: 详细分析 ========== -->
+        <div id="content-analysis" class="tab-content hidden">
+            
+            <div class="bg-white rounded-xl card-shadow p-6 mb-6">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6">📈 全维度数据分析</h2>
+                
+                <!-- 数字化能力 -->
+                <div class="mb-8">
+                    <h3 class="text-lg font-semibold text-gray-700 mb-4">💻 数字化工具习惯</h3>
+                    <div id="chart-digital" style="height: 300px;"></div>
+                </div>
+
+                <!-- AI使用情况 -->
+                <div class="mb-8">
+                    <h3 class="text-lg font-semibold text-gray-700 mb-4">🤖 AI工具使用程度</h3>
+                    <div id="chart-usage" style="height: 300px;"></div>
+                </div>
+
+                <!-- 机构AI阶段 -->
+                <div class="mb-8">
+                    <h3 class="text-lg font-semibold text-gray-700 mb-4">🏢 机构AI推进阶段</h3>
+                    <div id="chart-org" style="height: 300px;"></div>
+                </div>
+
+                <!-- 个人角色 -->
+                <div class="mb-8">
+                    <h3 class="text-lg font-semibold text-gray-700 mb-4">👤 个人项目角色</h3>
+                    <div id="chart-personal" style="height: 300px;"></div>
+                </div>
+
+                <!-- 推进约束 -->
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-700 mb-4">⚠️ AI推进面临的约束</h3>
+                    <div id="chart-constraints" style="height: 350px;"></div>
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- ========== Tab 3: AI报告 ========== -->
+        <div id="content-ai" class="tab-content hidden">
+            
+            <!-- AI分析控制区 -->
+            <div class="bg-white rounded-xl card-shadow p-6 mb-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-800">🤖 AI演讲内容建议</h2>
+                        <p class="text-sm text-gray-500 mt-1">基于问卷数据，AI为您的演讲提供针对性建议</p>
+                    </div>
+                    <button id="btn-analyze" onclick="startAIAnalysis()" 
+                            class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-semibold shadow-lg">
+                        ▶️ 开始AI分析
+                    </button>
+                </div>
+            </div>
+
+            <!-- AI分析结果展示区 -->
+            <div id="ai-result-container">
+                
+                <!-- 初始状态 -->
+                <div id="ai-initial" class="bg-white rounded-xl card-shadow p-12 text-center">
+                    <div class="text-6xl mb-4">🎯</div>
+                    <h3 class="text-xl font-semibold text-gray-700 mb-2">点击上方按钮开始AI分析</h3>
+                    <p class="text-gray-500">AI将根据当前问卷数据，为您的演讲提供针对性建议</p>
+                </div>
+
+                <!-- 加载中 -->
+                <div id="ai-loading" class="bg-white rounded-xl card-shadow p-12 text-center hidden">
+                    <div class="loading-spinner mx-auto mb-4"></div>
+                    <h3 class="text-xl font-semibold text-gray-700 mb-2">AI正在分析中...</h3>
+                    <p class="text-gray-500">预计需要30-60秒，请稍候</p>
+                </div>
+
+                <!-- 结果显示 -->
+                <div id="ai-results" class="hidden">
+                    <!-- 动态生成内容 -->
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- ========== Tab 4: 数据管理 ========== -->
+        <div id="content-manage" class="tab-content hidden">
+            
+            <div class="bg-white rounded-xl card-shadow p-6">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6">⚙️ 数据管理</h2>
+                
+                <!-- 导出功能 -->
+                <div class="mb-8 pb-8 border-b">
+                    <h3 class="text-lg font-semibold text-gray-700 mb-4">📥 数据导出</h3>
+                    <div class="flex gap-4">
+                        <button onclick="exportData()" class="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">
+                            导出CSV文件
+                        </button>
+                        <button onclick="exportAnalysis()" class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+                            导出AI分析报告
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 数据统计 -->
+                <div class="mb-8 pb-8 border-b">
+                    <h3 class="text-lg font-semibold text-gray-700 mb-4">📊 数据统计</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <div class="text-sm text-gray-500">总提交数</div>
+                            <div class="text-2xl font-bold text-gray-900 mt-1"><span id="stat-total">0</span></div>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <div class="text-sm text-gray-500">移动端</div>
+                            <div class="text-2xl font-bold text-gray-900 mt-1"><span id="stat-mobile">0</span></div>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <div class="text-sm text-gray-500">桌面端</div>
+                            <div class="text-2xl font-bold text-gray-900 mt-1"><span id="stat-desktop">0</span></div>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <div class="text-sm text-gray-500">平均时长</div>
+                            <div class="text-2xl font-bold text-gray-900 mt-1"><span id="stat-avgtime">0</span>s</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 危险操作 -->
+                <div>
+                    <h3 class="text-lg font-semibold text-red-600 mb-4">⚠️ 危险操作</h3>
+                    <div class="bg-red-50 rounded-lg p-4">
+                        <p class="text-sm text-red-700 mb-4">清空数据后将无法恢复，请谨慎操作！</p>
+                        <button onclick="clearAllData()" class="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition">
+                            清空所有问卷数据
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+</div>
+
+<!-- ========== JavaScript核心逻辑 ========== -->
+<script>
+// ===== 初始化 =====
+window.onload = async function() {
+    // 初始化Supabase
+    supabase = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
+    
+    // 初始化图表
+    initCharts();
+    
+    // 加载数据
+    await loadData();
+    
+    // 订阅实时更新
+    subscribeRealtime();
+    
+    // 定时更新最新提交时间
+    setInterval(updateLatestTime, 5000);
+    
+    // 尝试加载已有的AI分析
+    await loadExistingAnalysis();
+};
+
+// ===== Tab切换 =====
+function switchTab(tabName) {
+    // 隐藏所有Tab内容
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+    // 移除所有Tab按钮的active状态
+    document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+    
+    // 显示选中的Tab
+    document.getElementById('content-' + tabName).classList.remove('hidden');
+    document.getElementById('tab-' + tabName).classList.add('active');
+    
+    // 如果切换到图表Tab，重绘图表（解决切换后图表不显示的问题）
+    if (tabName === 'analysis') {
+        setTimeout(() => {
+            Object.values(charts).forEach(chart => chart.resize());
+        }, 100);
+    }
+}
+
+// ===== 初始化所有图表 =====
+function initCharts() {
+    charts.industry = echarts.init(document.getElementById('chart-industry'));
+    charts.role = echarts.init(document.getElementById('chart-role'));
+    charts.pain = echarts.init(document.getElementById('chart-pain'));
+    charts.attitude = echarts.init(document.getElementById('chart-attitude'));
+    charts.digital = echarts.init(document.getElementById('chart-digital'));
+    charts.usage = echarts.init(document.getElementById('chart-usage'));
+    charts.org = echarts.init(document.getElementById('chart-org'));
+    charts.personal = echarts.init(document.getElementById('chart-personal'));
+    charts.constraints = echarts.init(document.getElementById('chart-constraints'));
+}
+
+// ===== 加载数据 =====
+async function loadData() {
+    try {
+        console.log('开始加载数据...');
+        
+        // 方法1: 使用Supabase RPC函数
+        try {
+            const { data: stats, error } = await supabase
+                .rpc('get_session_statistics', { p_session_id: CONFIG.SESSION_ID });
+            
+            if (error) {
+                console.error('Supabase RPC错误:', error);
+                throw error;
+            }
+            
+            if (stats) {
+                console.log('✅ 通过Supabase RPC加载成功', stats);
+                statsData = stats;
+                updateStatCards(stats);
+                updateAllCharts(stats);
+                return;
+            }
+        } catch (rpcError) {
+            console.warn('Supabase RPC失败，尝试备用方案:', rpcError);
+        }
+        
+        // 方法2: 备用方案 - 使用后端API
+        console.log('使用后端API加载数据...');
+        const response = await fetch(`${CONFIG.API_BASE_URL}/api/stats?session_id=${CONFIG.SESSION_ID}`);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const stats = await response.json();
+        console.log('✅ 通过后端API加载成功', stats);
+        
+        statsData = stats;
+        updateStatCards(stats);
+        updateAllCharts(stats);
+        
+    } catch (error) {
+        console.error('❌ 加载数据失败:', error);
+        
+        // 显示友好的错误信息
+        const errorMsg = error.message || '未知错误';
+        alert(`数据加载失败: ${errorMsg}\n\n请检查：\n1. 后端服务是否运行\n2. Supabase配置是否正确\n3. 浏览器控制台查看详细错误`);
+        
+        // 显示空状态
+        document.getElementById('total-count').textContent = '0';
+        document.getElementById('avg-time').textContent = '0';
+        document.getElementById('top-pain').textContent = '暂无数据';
+    }
+}
+
+// ===== 更新统计卡片 =====
+function updateStatCards(stats) {
+    const totalCount = stats.total_responses || 0;
+    const avgTime = Math.round((stats.avg_completion_time || 0) / 60 * 10) / 10;
+    
+    // 更新数字（带动画）
+    const countElement = document.getElementById('total-count');
+    if (countElement && window.countUp && window.countUp.CountUp) {
+        try {
+            const counter = new window.countUp.CountUp(countElement, totalCount, {
+                duration: 1.5,
+                useEasing: true
+            });
+            counter.start();
+        } catch (e) {
+            // 如果CountUp失败，直接更新数字
+            countElement.textContent = totalCount;
+        }
+    } else {
+        // 如果CountUp未加载，直接更新数字
+        countElement.textContent = totalCount;
+    }
+    
+    document.getElementById('avg-time').textContent = stats.avg_completion_time || 0;
+    document.getElementById('min-time').textContent = '60';  // 可以从原始数据计算
+    document.getElementById('max-time').textContent = '300';
+    
+    // 最热门痛点
+    const painPoints = stats.pain_points || {};
+    if (Object.keys(painPoints).length > 0) {
+        const topPain = Object.entries(painPoints).sort((a, b) => b[1] - a[1])[0];
+        document.getElementById('top-pain').textContent = formatPainPoint(topPain[0]);
+        document.getElementById('top-pain-count').textContent = topPain[1];
+    }
+    
+    // 管理Tab统计
+    document.getElementById('stat-total').textContent = totalCount;
+    document.getElementById('stat-mobile').textContent = stats.mobile_count || 0;
+    document.getElementById('stat-desktop').textContent = stats.desktop_count || 0;
+    document.getElementById('stat-avgtime').textContent = stats.avg_completion_time || 0;
+}
+
+// ===== 更新所有图表 =====
+function updateAllCharts(stats) {
+    // Tab1图表
+    updateIndustryChart(stats.industries || {});
+    updateRoleChart(stats.roles || {});
+    updatePainChart(stats.pain_points || {});
+    updateAttitudeChart(stats.attitudes || {});
+    
+    // Tab2图表
+    updateDigitalChart(stats.digital_habits || {});
+    updateUsageChart(stats.ai_usages || {});
+    updateOrgChart(stats.org_stages || {});
+    updatePersonalChart(stats.personal_roles || {});
+    updateConstraintsChart(stats.constraints || {});
+}
+
+// ===== 行业分布图（饼图）=====
+function updateIndustryChart(data) {
+    const chartData = Object.entries(data).map(([name, value]) => ({
+        name: formatIndustry(name),
+        value
+    }));
+    
+    charts.industry.setOption({
+        tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
+        series: [{
+            type: 'pie',
+            radius: ['40%', '70%'],
+            avoidLabelOverlap: true,
+            itemStyle: {
+                borderRadius: 10,
+                borderColor: '#fff',
+                borderWidth: 2
+            },
+            label: { show: true, formatter: '{b}\n{d}%' },
+            emphasis: {
+                label: { show: true, fontSize: 16, fontWeight: 'bold' }
+            },
+            data: chartData,
+            color: ['#5470c6', '#91cc75', '#fac858', '#ee6666', '#73c0de', '#3ba272', '#fc8452', '#9a60b4']
+        }]
+    });
+}
+
+// ===== 角色分布图（柱状图）=====
+function updateRoleChart(data) {
+    const labels = Object.keys(data).map(formatRole);
+    const values = Object.values(data);
+    
+    charts.role.setOption({
+        tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+        xAxis: {
+            type: 'category',
+            data: labels,
+            axisLabel: { rotate: 30, interval: 0, fontSize: 11 }
+        },
+        yAxis: { type: 'value' },
+        series: [{
+            type: 'bar',
+            data: values,
+            itemStyle: {
+                color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                    { offset: 0, color: '#83bff6' },
+                    { offset: 1, color: '#188df0' }
+                ]),
+                borderRadius: [6, 6, 0, 0]
+            },
+            label: { show: true, position: 'top' }
+        }]
+    });
+}
+
+// ===== 痛点热力图（横向条形图）=====
+function updatePainChart(data) {
+    const sortedData = Object.entries(data).sort((a, b) => b[1] - a[1]);
+    const labels = sortedData.map(([k, v]) => formatPainPoint(k));
+    const values = sortedData.map(([k, v]) => v);
+    
+    charts.pain.setOption({
+        tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+        grid: { left: '35%', right: '10%' },
+        xAxis: { type: 'value' },
+        yAxis: {
+            type: 'category',
+            data: labels,
+            axisLabel: { fontSize: 11 }
+        },
+        series: [{
+            type: 'bar',
+            data: values,
+            itemStyle: {
+                color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [
+                    { offset: 0, color: '#fa709a' },
+                    { offset: 1, color: '#fee140' }
+                ]),
+                borderRadius: [0, 6, 6, 0]
+            },
+            label: { show: true, position: 'right' }
+        }]
+    });
+}
+
+// ===== AI态度分布（雷达图）=====
+function updateAttitudeChart(data) {
+    const labels = ['积极拥抱', '理性谨慎', '观望等待', '存疑担忧', '不确定'];
+    const values = [data['1'] || 0, data['2'] || 0, data['3'] || 0, data['4'] || 0, data['5'] || 0];
+    
+    charts.attitude.setOption({
+        tooltip: {},
+        radar: {
+            indicator: labels.map(name => ({ name, max: Math.max(...values) + 2 })),
+            radius: '65%'
+        },
+        series: [{
+            type: 'radar',
+            data: [{
+                value: values,
+                name: 'AI态度分布',
+                areaStyle: {
+                    color: new echarts.graphic.RadialGradient(0.5, 0.5, 1, [{
+                        color: 'rgba(103, 126, 234, 0.1)',
+                        offset: 0
+                    }, {
+                        color: 'rgba(103, 126, 234, 0.9)',
+                        offset: 1
+                    }])
+                }
+            }]
+        }]
+    });
+}
+
+// ===== 数字化习惯（柱状图）=====
+function updateDigitalChart(data) {
+    const labels = ['基础工具', 'Excel高级+BI', 'SQL/脚本', '搭建自动化'];
+    const values = [data['1'] || 0, data['2'] || 0, data['3'] || 0, data['4'] || 0];
+    
+    charts.digital.setOption({
+        tooltip: { trigger: 'axis' },
+        xAxis: { type: 'category', data: labels },
+        yAxis: { type: 'value' },
+        series: [{
+            type: 'bar',
+            data: values,
+            itemStyle: { color: '#5470c6', borderRadius: [6, 6, 0, 0] },
+            label: { show: true, position: 'top' }
+        }]
+    });
+}
+
+// ===== AI使用程度（柱状图）=====
+function updateUsageChart(data) {
+    const labels = ['还没用过', '偶尔尝试', '经常使用', '深度应用', '团队推广'];
+    const values = [data['1'] || 0, data['2'] || 0, data['3'] || 0, data['4'] || 0, data['5'] || 0];
+    
+    charts.usage.setOption({
+        tooltip: { trigger: 'axis' },
+        xAxis: { type: 'category', data: labels },
+        yAxis: { type: 'value' },
+        series: [{
+            type: 'bar',
+            data: values,
+            itemStyle: {
+                color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                    { offset: 0, color: '#fbc2eb' },
+                    { offset: 1, color: '#a6c1ee' }
+                ]),
+                borderRadius: [6, 6, 0, 0]
+            },
+            label: { show: true, position: 'top' }
+        }]
+    });
+}
+
+// ===== 机构阶段（柱状图）=====
+function updateOrgChart(data) {
+    const labels = ['调研讨论', '小范围试点', '多场景使用', '整体规划', '不确定'];
+    const values = [data['1'] || 0, data['2'] || 0, data['3'] || 0, data['4'] || 0, data['5'] || 0];
+    
+    charts.org.setOption({
+        tooltip: { trigger: 'axis' },
+        xAxis: { type: 'category', data: labels },
+        yAxis: { type: 'value' },
+        series: [{
+            type: 'bar',
+            data: values,
+            itemStyle: { color: '#91cc75', borderRadius: [6, 6, 0, 0] },
+            label: { show: true, position: 'top' }
+        }]
+    });
+}
+
+// ===== 个人角色（饼图）=====
+function updatePersonalChart(data) {
+    const labels = { '1': '使用者', '2': '参与者', '3': '推动者', '4': '观察者' };
+    const chartData = Object.entries(data).map(([k, v]) => ({
+        name: labels[k] || k,
+        value: v
+    }));
+    
+    charts.personal.setOption({
+        tooltip: { trigger: 'item' },
+        series: [{
+            type: 'pie',
+            radius: '60%',
+            data: chartData,
+            emphasis: { itemStyle: { shadowBlur: 10, shadowOffsetX: 0, shadowColor: 'rgba(0, 0, 0, 0.5)' } }
+        }]
+    });
+}
+
+// ===== 推进约束（横向条形图）=====
+function updateConstraintsChart(data) {
+    if (!data || Object.keys(data).length === 0) {
+        charts.constraints.setOption({
+            title: { text: '暂无数据', left: 'center', top: 'center', textStyle: { color: '#ccc' } }
+        });
+        return;
+    }
+    
+    const sortedData = Object.entries(data).sort((a, b) => b[1] - a[1]);
+    const labels = sortedData.map(([k, v]) => formatConstraint(k));
+    const values = sortedData.map(([k, v]) => v);
+    
+    charts.constraints.setOption({
+        tooltip: { trigger: 'axis' },
+        grid: { left: '25%', right: '10%' },
+        xAxis: { type: 'value' },
+        yAxis: { type: 'category', data: labels, axisLabel: { fontSize: 11 } },
+        series: [{
+            type: 'bar',
+            data: values,
+            itemStyle: { color: '#ee6666', borderRadius: [0, 6, 6, 0] },
+            label: { show: true, position: 'right' }
+        }]
+    });
+}
+
+// ===== 格式化函数 =====
+function formatIndustry(key) {
+    const map = {
+        '银行': '银行',
+        '证券公司': '证券',
+        '保险公司': '保险',
+        '期货公司': '期货',
+        '基金公司（公募/私募/资管）': '基金',
+        '金融科技公司（非持牌）': '金融科技',
+        '其他持牌金融机构（如消费金融、金融租赁、金控集团等）': '其他持牌',
+        '其他行业': '其他'
+    };
+    return map[key] || key;
+}
+
+function formatRole(key) {
+    const map = {
+        '战略/管理': '战略管理',
+        '产品开发/创新': '产品创新',
+        '风控/合规': '风控合规',
+        '投资/研究': '投资研究',
+        '数据分析/建模': '数据分析',
+        '技术开发': '技术开发',
+        'IT/运维': 'IT运维',
+        '其他方向': '其他'
+    };
+    return map[key] || key;
+}
+
+function formatPainPoint(key) {
+    const map = {
+        'report_integration': '报表整合',
+        'doc_writing': '周报月报撰写',
+        'research_reading': '研报快速阅读',
+        'customer_qa': '客户问题答疑',
+        'compliance_review': '合规风控审查',
+        'data_reconciliation': '数据核对对账',
+        'policy_search': '内部制度查询',
+        'code_dev': '代码脚本开发',
+        'none': '暂无明确痛点'
+    };
+    return map[key] || key;
+}
+
+function formatConstraint(key) {
+    const map = {
+        'data_security': '数据安全',
+        'cost_budget': '成本预算',
+        'tech_infra': '技术基础设施',
+        'talent_shortage': '缺乏专业人才',
+        'integration_complexity': '系统集成复杂',
+        'roi_unclear': '投入产出不明',
+        'internal_resistance': '内部推动阻力',
+        'regulatory_compliance': '监管合规挑战',
+        'explainability_trust': '可解释性不足',
+        'vendor_selection': '供应商选择困难',
+        'tech_implementation': '技术落地困难'
+    };
+    return map[key] || key;
+}
+
+// ===== 实时订阅 =====
+function subscribeRealtime() {
+    supabase
+        .channel('responses_channel')
+        .on('postgres_changes', {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'responses',
+            filter: `session_id=eq.${CONFIG.SESSION_ID}`
+        }, payload => {
+            console.log('新提交:', payload);
+            // 显示"NEW"徽章
+            const badge = document.getElementById('new-badge');
+            badge.classList.remove('hidden');
+            setTimeout(() => badge.classList.add('hidden'), 3000);
+            
+            // 刷新数据
+            loadData();
+        })
+        .subscribe();
+}
+
+// ===== 更新最新提交时间 =====
+function updateLatestTime() {
+    // 从statsData获取最新时间或直接查询
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+    const minutesAgo = Math.floor(Math.random() * 10);  // 示例，实际应从数据计算
+    
+    document.getElementById('latest-time').textContent = `${minutesAgo}分钟前`;
+}
+
+// ===== AI分析功能 =====
+async function startAIAnalysis() {
+    document.getElementById('ai-initial').classList.add('hidden');
+    document.getElementById('ai-results').classList.add('hidden');
+    document.getElementById('ai-loading').classList.remove('hidden');
+    document.getElementById('btn-analyze').disabled = true;
+    document.getElementById('btn-analyze').innerHTML = '⏳ 分析中...';
+    
+    try {
+        const response = await fetch(`${CONFIG.API_BASE_URL}/api/analyze`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ session_id: CONFIG.SESSION_ID })
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.detail || '分析失败');
+        }
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            analysisData = result.data.analysis;
+            displayAIResults(analysisData);
+        }
+        
+    } catch (error) {
+        console.error('AI分析失败:', error);
+        alert('AI分析失败: ' + error.message);
+        document.getElementById('ai-initial').classList.remove('hidden');
+    } finally {
+        document.getElementById('ai-loading').classList.add('hidden');
+        document.getElementById('btn-analyze').disabled = false;
+        document.getElementById('btn-analyze').innerHTML = '▶️ 重新分析';
+    }
+}
+
+// ===== 加载已有的AI分析 =====
+async function loadExistingAnalysis() {
+    try {
+        const { data, error } = await supabase
+            .from('analysis_results')
+            .select('*')
+            .eq('session_id', CONFIG.SESSION_ID)
+            .order('created_at', { ascending: false })
+            .limit(1);
+        
+        if (error) throw error;
+        
+        if (data && data.length > 0) {
+            try {
+                const analysisJson = JSON.parse(data[0].analysis_text);
+                analysisData = analysisJson;
+                displayAIResults(analysisJson);
+                document.getElementById('ai-initial').classList.add('hidden');
+                document.getElementById('btn-analyze').innerHTML = '🔄 重新分析';
+            } catch (e) {
+                console.error('解析AI结果失败:', e);
+            }
+        }
+    } catch (error) {
+        console.error('加载AI分析失败:', error);
+    }
+}
+
+// ===== 渲染AI分析结果（JSON结构）=====
+function displayAIResults(data) {
+    const container = document.getElementById('ai-results');
+    container.innerHTML = '';
+    
+    // 如果是旧的文本格式
+    if (data.raw_text) {
+        container.innerHTML = `<div class="bg-white rounded-xl card-shadow p-6">
+            <div class="prose max-w-none">${data.raw_text.replace(/\n/g, '<br>')}</div>
+        </div>`;
+        container.classList.remove('hidden');
+        return;
+    }
+    
+    // 1. 受众分析总览
+    if (data.audience_analysis) {
+        const audience = data.audience_analysis;
+        const html = `
+        <div class="bg-white rounded-xl card-shadow p-6 mb-6">
+            <h3 class="text-2xl font-bold text-gray-800 mb-4">👥 受众画像总览</h3>
+            <p class="text-gray-700 mb-6 leading-relaxed">${audience.summary}</p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                ${audience.key_characteristics.map(item => `
+                    <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-4">
+                        <div class="text-sm font-semibold text-blue-900 mb-2">${item.dimension}</div>
+                        <div class="text-xs text-blue-700 mb-1">${item.insight}</div>
+                        <div class="text-lg font-bold text-blue-600">${item.percentage}</div>
+                    </div>
+                `).join('')}
+            </div>
+            
+            <h4 class="text-lg font-semibold text-gray-700 mb-3">准备度评分</h4>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="flex items-center gap-4">
+                    <div class="text-4xl font-bold text-blue-600">${audience.readiness_score.technical.score}</div>
+                    <div>
+                        <div class="text-sm font-semibold text-gray-700">技术准备度</div>
+                        <div class="text-xs text-gray-500">${audience.readiness_score.technical.description}</div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div class="text-4xl font-bold text-green-600">${audience.readiness_score.mindset.score}</div>
+                    <div>
+                        <div class="text-sm font-semibold text-gray-700">认知态度</div>
+                        <div class="text-xs text-gray-500">${audience.readiness_score.mindset.description}</div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div class="text-4xl font-bold text-purple-600">${audience.readiness_score.organizational.score}</div>
+                    <div>
+                        <div class="text-sm font-semibold text-gray-700">组织支持度</div>
+                        <div class="text-xs text-gray-500">${audience.readiness_score.organizational.description}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        `;
+        container.insertAdjacentHTML('beforeend', html);
+    }
+    
+    // 2. 关键发现
+    if (data.key_findings && data.key_findings.length > 0) {
+        const priorityColors = {
+            high: 'red',
+            medium: 'yellow',
+            low: 'green'
+        };
+        
+        const html = `
+        <div class="bg-white rounded-xl card-shadow p-6 mb-6">
+            <h3 class="text-2xl font-bold text-gray-800 mb-4">💡 关键发现</h3>
+            ${data.key_findings.map(item => {
+                const color = priorityColors[item.priority];
+                return `
+                <div class="border-l-4 border-${color}-500 bg-${color}-50 rounded-r-lg p-4 mb-4">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="px-2 py-1 bg-${color}-200 text-${color}-800 text-xs font-semibold rounded">${item.priority.toUpperCase()}</span>
+                        <h4 class="text-lg font-semibold text-gray-800">${item.title}</h4>
+                    </div>
+                    <ul class="list-disc list-inside text-gray-700 mb-2">
+                        ${item.details.map(d => `<li class="text-sm">${d}</li>`).join('')}
+                    </ul>
+                    <div class="text-sm text-gray-600 italic">→ ${item.implication}</div>
+                </div>
+                `;
+            }).join('')}
+        </div>
+        `;
+        container.insertAdjacentHTML('beforeend', html);
+    }
+    
+    // 3. 演讲内容建议
+    if (data.content_recommendations) {
+        const rec = data.content_recommendations;
+        
+        // Part 1: 概念部分
+        if (rec.part1_concepts) {
+            const html = `
+            <div class="bg-white rounded-xl card-shadow p-6 mb-6">
+                <h3 class="text-2xl font-bold text-gray-800 mb-4">📚 第一部分：概念与趋势建议</h3>
+                
+                <div class="mb-4">
+                    <div class="text-sm font-semibold text-gray-600 mb-2">建议深度层级</div>
+                    <span class="px-4 py-2 bg-blue-100 text-blue-800 rounded-full font-semibold">${rec.part1_concepts.depth_level}</span>
+                </div>
+                
+                <div class="mb-4">
+                    <div class="text-sm font-semibold text-gray-600 mb-2">应该强调</div>
+                    <div class="flex flex-wrap gap-2">
+                        ${rec.part1_concepts.emphasis.map(item => `
+                            <span class="px-3 py-1 bg-green-100 text-green-800 text-sm rounded-full">✓ ${item}</span>
+                        `).join('')}
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <div class="text-sm font-semibold text-gray-600 mb-3">建议话题</div>
+                    ${rec.part1_concepts.suggested_topics.map(item => `
+                        <div class="bg-gray-50 rounded-lg p-3 mb-2">
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="font-semibold text-gray-800">${item.topic}</span>
+                                <span class="text-xs text-gray-500">${item.time_allocation}</span>
+                            </div>
+                            <div class="text-sm text-gray-600">${item.rationale}</div>
+                        </div>
+                    `).join('')}
+                </div>
+                
+                <div>
+                    <div class="text-sm font-semibold text-gray-600 mb-2">应该避免</div>
+                    <div class="flex flex-wrap gap-2">
+                        ${rec.part1_concepts.avoid.map(item => `
+                            <span class="px-3 py-1 bg-red-100 text-red-800 text-sm rounded-full">✗ ${item}</span>
+                        `).join('')}
+                    </div>
+                </div>
+            </div>
+            `;
+            container.insertAdjacentHTML('beforeend', html);
+        }
+        
+        // Part 2: 案例建议
+        if (rec.part2_cases) {
+            const cases = [
+                { key: 'case1_resume', title: '案例1: 智能简历筛选', icon: '📄' },
+                { key: 'case2_contract', title: '案例2: 合同审查工作流', icon: '📝' },
+                { key: 'case3_research', title: '案例3: 信用债调研报告', icon: '📊' }
+            ];
+            
+            let html = `
+            <div class="bg-white rounded-xl card-shadow p-6 mb-6">
+                <h3 class="text-2xl font-bold text-gray-800 mb-4">🎬 第二部分：案例演示建议</h3>
+            `;
+            
+            cases.forEach(({ key, title, icon }) => {
+                if (rec.part2_cases[key]) {
+                    const caseData = rec.part2_cases[key];
+                    html += `
+                    <div class="border-2 border-blue-200 rounded-lg p-4 mb-4">
+                        <div class="flex items-center gap-2 mb-3">
+                            <span class="text-2xl">${icon}</span>
+                            <h4 class="text-lg font-bold text-gray-800">${title}</h4>
+                            <span class="ml-auto px-3 py-1 bg-blue-100 text-blue-800 font-semibold rounded">相关度: ${caseData.relevance_score}/10</span>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <div class="text-sm font-semibold text-gray-600 mb-1">演示重点</div>
+                            <ul class="list-disc list-inside text-sm text-gray-700">
+                                ${caseData.emphasis.map(e => `<li>${e}</li>`).join('')}
+                            </ul>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <div class="text-sm font-semibold text-gray-600 mb-1">演示建议</div>
+                            <p class="text-sm text-gray-700">${caseData.demo_suggestions}</p>
+                        </div>
+                        
+                        <div>
+                            <div class="text-sm font-semibold text-gray-600 mb-1">可能被问的问题</div>
+                            <div class="flex flex-wrap gap-2">
+                                ${caseData.qa_predictions.map(q => `
+                                    <span class="px-2 py-1 bg-yellow-50 text-yellow-800 text-xs rounded border border-yellow-200">❓ ${q}</span>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+                    `;
+                }
+            });
+            
+            // 案例顺序建议
+            if (rec.part2_cases.case_order_suggestion) {
+                html += `
+                <div class="bg-blue-50 rounded-lg p-4 mb-4">
+                    <div class="text-sm font-semibold text-blue-900 mb-2">📌 建议案例顺序</div>
+                    <div class="text-blue-800 mb-2">
+                        案例${rec.part2_cases.case_order_suggestion.recommended_order.join(' → 案例')}
+                    </div>
+                    <div class="text-sm text-blue-700">${rec.part2_cases.case_order_suggestion.rationale}</div>
+                </div>
+                `;
+            }
+            
+            // 灵活案例
+            if (rec.part2_cases.flexible_case) {
+                const flexColor = rec.part2_cases.flexible_case.should_present ? 'green' : 'gray';
+                html += `
+                <div class="bg-${flexColor}-50 border-2 border-${flexColor}-200 rounded-lg p-4">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="text-xl">🏭</span>
+                        <h4 class="text-lg font-bold text-gray-800">灵活案例：制造业授权报价</h4>
+                        <span class="ml-auto px-3 py-1 bg-${flexColor}-200 text-${flexColor}-800 font-semibold rounded">
+                            ${rec.part2_cases.flexible_case.should_present ? '✓ 建议演示' : '× 可跳过'}
+                        </span>
+                    </div>
+                    <p class="text-sm text-gray-700">${rec.part2_cases.flexible_case.rationale}</p>
+                </div>
+                `;
+            }
+            
+            html += `</div>`;
+            container.insertAdjacentHTML('beforeend', html);
+        }
+        
+        // 时间分配
+        if (rec.time_allocation) {
+            const ta = rec.time_allocation;
+            const html = `
+            <div class="bg-white rounded-xl card-shadow p-6 mb-6">
+                <h3 class="text-2xl font-bold text-gray-800 mb-4">⏰ 时间分配建议</h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+                    <div>
+                        <h4 class="text-lg font-semibold text-gray-700 mb-3">第一部分（概念）</h4>
+                        ${Object.entries(ta.part1_breakdown).map(([k, v]) => `
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-gray-600">${k}</span>
+                                <span class="font-semibold text-blue-600">${v}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <div>
+                        <h4 class="text-lg font-semibold text-gray-700 mb-3">第二部分（案例）</h4>
+                        ${Object.entries(ta.part2_breakdown).map(([k, v]) => `
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-gray-600">${k}</span>
+                                <span class="font-semibold text-green-600">${v}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+                
+                <div class="bg-gray-50 rounded-lg p-4">
+                    <div class="text-sm font-semibold text-gray-600 mb-1">调整理由</div>
+                    <p class="text-sm text-gray-700">${ta.adjustment_rationale}</p>
+                </div>
+            </div>
+            `;
+            container.insertAdjacentHTML('beforeend', html);
+        }
+    }
+    
+    // 4. 互动设计
+    if (data.interaction_design) {
+        const inter = data.interaction_design;
+        let html = `
+        <div class="bg-white rounded-xl card-shadow p-6 mb-6">
+            <h3 class="text-2xl font-bold text-gray-800 mb-4">🎪 互动环节设计</h3>
+        `;
+        
+        // 现场PoC建议
+        if (inter.live_poc_suggestions && inter.live_poc_suggestions.length > 0) {
+            html += `
+            <div class="mb-6">
+                <h4 class="text-lg font-semibold text-gray-700 mb-3">💡 现场演示建议</h4>
+                ${inter.live_poc_suggestions.map(poc => `
+                    <div class="bg-purple-50 border-l-4 border-purple-500 rounded-r-lg p-4 mb-3">
+                        <div class="font-semibold text-purple-900 mb-2">${poc.scenario}</div>
+                        <div class="text-sm text-gray-700 mb-2">${poc.description}</div>
+                        <div class="text-sm text-gray-600 mb-2"><strong>为什么：</strong>${poc.why}</div>
+                        <div class="flex items-center justify-between text-xs text-gray-500">
+                            <span>📋 准备: ${poc.preparation}</span>
+                            <span>⏱️ ${poc.time_needed}</span>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+            `;
+        }
+        
+        // Q&A策略
+        if (inter.qa_strategy) {
+            html += `
+            <div class="mb-6">
+                <h4 class="text-lg font-semibold text-gray-700 mb-3">❓ Q&A环节策略</h4>
+                <div class="bg-yellow-50 rounded-lg p-4 mb-3">
+                    <div class="text-sm font-semibold text-yellow-900 mb-2">预测的高频问题</div>
+                    ${inter.qa_strategy.predicted_questions.map(q => `
+                        <div class="mb-3">
+                            <div class="text-sm font-semibold text-gray-800 mb-1">Q: ${q.question}</div>
+                            <div class="text-sm text-gray-700">A: ${q.suggested_answer}</div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+            `;
+        }
+        
+        // 讨论话题
+        if (inter.discussion_topics && inter.discussion_topics.length > 0) {
+            html += `
+            <div>
+                <h4 class="text-lg font-semibold text-gray-700 mb-3">💬 讨论话题</h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    ${inter.discussion_topics.map(topic => `
+                        <div class="bg-gray-50 rounded-lg p-3">
+                            <div class="font-semibold text-gray-800 mb-1">${topic.topic}</div>
+                            <div class="text-xs text-gray-600 mb-1">引入: ${topic.starter}</div>
+                            <div class="text-xs text-gray-500">目标: ${topic.expected_outcome}</div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+            `;
+        }
+        
+        html += `</div>`;
+        container.insertAdjacentHTML('beforeend', html);
+    }
+    
+    // 5. 受众分层
+    if (data.audience_segments && data.audience_segments.length > 0) {
+        const html = `
+        <div class="bg-white rounded-xl card-shadow p-6 mb-6">
+            <h3 class="text-2xl font-bold text-gray-800 mb-4">👥 受众分层分析</h3>
+            <div class="grid grid-cols-1 md:grid-cols-${Math.min(data.audience_segments.length, 3)} gap-4">
+                ${data.audience_segments.map(seg => `
+                    <div class="border-2 border-gray-200 rounded-lg p-4">
+                        <div class="flex items-center justify-between mb-3">
+                            <h4 class="text-lg font-bold text-gray-800">${seg.segment_name}</h4>
+                            <span class="text-2xl font-bold text-blue-600">${seg.percentage}%</span>
+                        </div>
+                        <div class="text-sm text-gray-600 mb-2">${seg.count}人 · ${seg.characteristics}</div>
+                        <div class="mb-3">
+                            <div class="text-xs font-semibold text-gray-500 mb-1">痛点</div>
+                            ${seg.pain_points.map(p => `<div class="text-xs text-red-600">• ${p}</div>`).join('')}
+                        </div>
+                        <div class="bg-blue-50 rounded p-2">
+                            <div class="text-xs font-semibold text-blue-900 mb-1">互动策略</div>
+                            <div class="text-xs text-blue-700">${seg.engagement_strategy}</div>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+        `;
+        container.insertAdjacentHTML('beforeend', html);
+    }
+    
+    // 6. 实用技巧
+    if (data.practical_tips) {
+        const tips = data.practical_tips;
+        const html = `
+        <div class="bg-white rounded-xl card-shadow p-6">
+            <h3 class="text-2xl font-bold text-gray-800 mb-4">🎯 实用演讲技巧</h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div class="bg-green-50 rounded-lg p-4">
+                    <div class="text-sm font-semibold text-green-900 mb-2">🚀 开场破冰</div>
+                    <p class="text-sm text-green-800">${tips.opening}</p>
+                </div>
+                <div class="bg-blue-50 rounded-lg p-4">
+                    <div class="text-sm font-semibold text-blue-900 mb-2">🔄 案例过渡</div>
+                    <p class="text-sm text-blue-800">${tips.transitions}</p>
+                </div>
+            </div>
+            
+            <div class="bg-purple-50 rounded-lg p-4 mb-4">
+                <div class="text-sm font-semibold text-purple-900 mb-2">💬 保持互动</div>
+                <div class="flex flex-wrap gap-2">
+                    ${tips.engagement_techniques.map(t => `
+                        <span class="px-3 py-1 bg-purple-200 text-purple-800 text-xs rounded-full">${t}</span>
+                    `).join('')}
+                </div>
+            </div>
+            
+            <div class="bg-orange-50 rounded-lg p-4">
+                <div class="text-sm font-semibold text-orange-900 mb-2">🎬 完美收尾</div>
+                <p class="text-sm text-orange-800">${tips.closing}</p>
+            </div>
+        </div>
+        `;
+        container.insertAdjacentHTML('beforeend', html);
+    }
+    
+    container.classList.remove('hidden');
+}
+
+// ===== 刷新数据 =====
+function refreshData() {
+    loadData();
+    loadExistingAnalysis();
+}
+
+// ===== 导出数据 =====
+async function exportData() {
+    window.location.href = `${CONFIG.API_BASE_URL}/api/export/${CONFIG.SESSION_ID}`;
+}
+
+// ===== 导出AI分析报告 =====
+function exportAnalysis() {
+    if (!analysisData) {
+        alert('暂无AI分析数据');
+        return;
+    }
+    
+    const text = JSON.stringify(analysisData, null, 2);
+    const blob = new Blob([text], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `AI分析报告_${CONFIG.SESSION_ID}_${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+}
+
+// ===== 关闭场次 =====
+function closeSession() {
+    if (!confirm('确定要关闭当前场次吗？这将停止接收新的问卷提交。')) {
+        return;
+    }
+    alert('功能开发中...');
+}
+
+// ===== 清空数据 =====
+async function clearAllData() {
+    if (!confirm('⚠️ 警告：清空数据后将无法恢复！确定要清空所有问卷数据吗？')) {
+        return;
+    }
+    
+    if (!confirm('再次确认：真的要删除所有数据吗？')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${CONFIG.API_BASE_URL}/api/cleanup/${CONFIG.SESSION_ID}`, {
+            method: 'DELETE'
+        });
+        
+        if (response.ok) {
+            alert('数据已清空');
+            location.reload();
+        } else {
+            throw new Error('清空失败');
+        }
+    } catch (error) {
+        alert('清空数据失败: ' + error.message);
+    }
+}
+
+// 窗口大小改变时重绘图表
+window.addEventListener('resize', () => {
+    Object.values(charts).forEach(chart => chart.resize());
+});
+</script>
+
+</body>
+</html>
