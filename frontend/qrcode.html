@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>问卷二维码</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen flex items-center justify-center p-6">
+    <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-2xl w-full">
+        <!-- 标题 -->
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">📱 问卷二维码</h1>
+            <p class="text-gray-600">AI应用需求调研 - 上海交通大学高级金融学院 MBA</p>
+        </div>
+
+        <!-- 二维码容器 -->
+        <div class="flex flex-col items-center space-y-6">
+            <!-- 二维码 -->
+            <div id="qrcode" class="bg-white p-6 rounded-xl border-4 border-blue-500 shadow-lg"></div>
+            
+            <!-- URL显示 -->
+            <div class="w-full bg-gray-50 rounded-lg p-4 border border-gray-200">
+                <p class="text-sm text-gray-500 mb-2">问卷链接：</p>
+                <div class="flex items-center gap-2">
+                    <input 
+                        type="text" 
+                        id="urlInput" 
+                        value="https://ai-questionnaire-xi.vercel.app/" 
+                        readonly 
+                        class="flex-1 px-3 py-2 bg-white border border-gray-300 rounded text-sm"
+                    >
+                    <button 
+                        onclick="copyUrl()" 
+                        class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition text-sm whitespace-nowrap"
+                    >
+                        📋 复制
+                    </button>
+                </div>
+            </div>
+
+            <!-- 提示信息 -->
+            <div class="w-full bg-blue-50 rounded-lg p-4 border border-blue-200">
+                <h3 class="font-semibold text-blue-900 mb-2">💡 使用说明</h3>
+                <ul class="text-sm text-blue-800 space-y-1">
+                    <li>• 使用微信扫描二维码即可直接填写问卷</li>
+                    <li>• 点击"下载二维码"保存图片，可打印或插入PPT</li>
+                    <li>• 点击"全屏显示"在演讲时投影展示</li>
+                </ul>
+            </div>
+
+            <!-- 操作按钮 -->
+            <div class="flex gap-3 w-full">
+                <button 
+                    onclick="downloadQR()" 
+                    class="flex-1 px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition font-medium shadow-md"
+                >
+                    💾 下载二维码
+                </button>
+                <button 
+                    onclick="toggleFullscreen()" 
+                    class="flex-1 px-6 py-3 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition font-medium shadow-md"
+                >
+                    🖥️ 全屏显示
+                </button>
+            </div>
+
+            <!-- 统计信息 -->
+            <div class="w-full bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg p-4 border border-indigo-200">
+                <p class="text-sm text-gray-600 text-center">
+                    📊 当前Session: <span class="font-bold text-indigo-600">SJTU_SAIF_PROD</span>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 全屏模式 -->
+    <div id="fullscreenOverlay" class="hidden fixed inset-0 bg-white z-50 flex flex-col items-center justify-center">
+        <button 
+            onclick="toggleFullscreen()" 
+            class="absolute top-4 right-4 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
+        >
+            ✕ 退出全屏
+        </button>
+        
+        <div class="text-center mb-8">
+            <h1 class="text-5xl font-bold text-gray-900 mb-4">扫码填写问卷</h1>
+            <p class="text-2xl text-gray-600">AI应用需求调研</p>
+            <p class="text-xl text-gray-500 mt-2">上海交通大学高级金融学院 MBA</p>
+        </div>
+        
+        <div id="qrcodeFullscreen" class="bg-white p-8 rounded-2xl border-8 border-blue-500 shadow-2xl"></div>
+        
+        <p class="mt-8 text-gray-500 text-lg">⏱ 填写时间约 2-3 分钟</p>
+    </div>
+
+    <script>
+        const url = 'https://ai-questionnaire-xi.vercel.app/';
+        
+        // 生成普通二维码
+        new QRCode(document.getElementById("qrcode"), {
+            text: url,
+            width: 280,
+            height: 280,
+            colorDark: "#000000",
+            colorLight: "#ffffff",
+            correctLevel: QRCode.CorrectLevel.H
+        });
+        
+        // 生成全屏二维码
+        new QRCode(document.getElementById("qrcodeFullscreen"), {
+            text: url,
+            width: 400,
+            height: 400,
+            colorDark: "#000000",
+            colorLight: "#ffffff",
+            correctLevel: QRCode.CorrectLevel.H
+        });
+        
+        // 复制URL
+        function copyUrl() {
+            const input = document.getElementById('urlInput');
+            input.select();
+            document.execCommand('copy');
+            alert('✅ 链接已复制到剪贴板！');
+        }
+        
+        // 下载二维码
+        function downloadQR() {
+            const qrCanvas = document.querySelector('#qrcode canvas');
+            if (qrCanvas) {
+                const link = document.createElement('a');
+                link.download = '问卷二维码-SJTU-SAIF.png';
+                link.href = qrCanvas.toDataURL();
+                link.click();
+            }
+        }
+        
+        // 切换全屏
+        function toggleFullscreen() {
+            const overlay = document.getElementById('fullscreenOverlay');
+            overlay.classList.toggle('hidden');
+        }
+        
+        // ESC键退出全屏
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                document.getElementById('fullscreenOverlay').classList.add('hidden');
+            }
+        });
+    </script>
+</body>
+</html>
+
