@@ -24,6 +24,17 @@
 </head>
 <body class="bg-gray-50">
 
+<!-- 加载提示 -->
+<div id="loadingOverlay" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: white; z-index: 9999; display: flex; align-items: center; justify-content: center; flex-direction: column;">
+    <div style="text-align: center;">
+        <div style="font-size: 48px; margin-bottom: 20px;">⏳</div>
+        <div style="font-size: 18px; color: #666;">页面加载中...</div>
+        <div id="loadError" style="display: none; margin-top: 20px; padding: 15px; background: #fee; border: 1px solid #fcc; border-radius: 8px; color: #c00; max-width: 300px;">
+            加载失败，请检查网络连接后刷新页面
+        </div>
+    </div>
+</div>
+
 <!-- ===== 配置区域 ===== -->
 <script>
 const CONFIG = {
@@ -31,6 +42,28 @@ const CONFIG = {
     SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJuaWRxaXZycnNiY2VteXdwcnlrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMwOTcwNzUsImV4cCI6MjA3ODY3MzA3NX0.TN8eCSMXAQM6mQcrzIw7ZlkE1d2Z7UZm_I0lYsI3Tek',
     SESSION_ID: 'SJTU_SAIF_PROD'
 };
+
+// 检测资源加载
+window.addEventListener('load', function() {
+    setTimeout(function() {
+        const overlay = document.getElementById('loadingOverlay');
+        if (overlay) {
+            if (typeof window.supabase !== 'undefined') {
+                overlay.style.display = 'none';
+            } else {
+                document.getElementById('loadError').style.display = 'block';
+            }
+        }
+    }, 1000);
+});
+
+// 超时检测
+setTimeout(function() {
+    const overlay = document.getElementById('loadingOverlay');
+    if (overlay && overlay.style.display !== 'none') {
+        document.getElementById('loadError').style.display = 'block';
+    }
+}, 10000);
 </script>
 
 <div class="min-h-screen pb-20">
