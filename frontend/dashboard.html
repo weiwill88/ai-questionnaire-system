@@ -86,7 +86,7 @@
 const CONFIG = {
     SUPABASE_URL: 'https://rnidqivrrsbcemywpryk.supabase.co',
     SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJuaWRxaXZycnNiY2VteXdwcnlrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMwOTcwNzUsImV4cCI6MjA3ODY3MzA3NX0.TN8eCSMXAQM6mQcrzIw7ZlkE1d2Z7UZm_I0lYsI3Tek',
-    SESSION_ID: 'SJTU_SAIF_PROD',
+    SESSION_ID: 'SJTU_SAIF_20251115',
     API_BASE_URL: 'http://localhost:8000'
 };
 
@@ -110,7 +110,8 @@ let charts = {};
                     <div class="flex items-center gap-2 ml-6">
                         <label class="text-sm font-medium text-gray-700">场次：</label>
                         <select id="sessionSelector" onchange="switchSession()" class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                            <option value="SJTU_SAIF_PROD">正式场次 (PROD)</option>
+                            <option value="SJTU_SAIF_20251115">正式场次 (2024-11-15)</option>
+                            <option value="SJTU_SAIF_PROD">测试场次 (PROD)</option>
                             <option value="SJTU_SAIF_20251114">测试场次 (20251114)</option>
                         </select>
                     </div>
