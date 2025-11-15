@@ -102,9 +102,18 @@ let charts = {};
     <header class="bg-white shadow-sm sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-6 py-4">
             <div class="flex items-center justify-between">
-                <div>
-                    <h1 class="text-2xl font-bold text-gray-900">AI应用需求调研 - 实时管理后台</h1>
-                    <p class="text-sm text-gray-500 mt-1">上海交通大学高级金融学院 MBA 课程</p>
+                <div class="flex items-center gap-4">
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900">AI应用需求调研 - 实时管理后台</h1>
+                        <p class="text-sm text-gray-500 mt-1">上海交通大学高级金融学院 MBA 课程</p>
+                    </div>
+                    <div class="flex items-center gap-2 ml-6">
+                        <label class="text-sm font-medium text-gray-700">场次：</label>
+                        <select id="sessionSelector" onchange="switchSession()" class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="SJTU_SAIF_PROD">正式场次 (PROD)</option>
+                            <option value="SJTU_SAIF_20251114">测试场次 (20251114)</option>
+                        </select>
+                    </div>
                 </div>
                 <div class="flex gap-3">
                     <button onclick="refreshData()" class="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">
@@ -388,6 +397,12 @@ let charts = {};
 <script>
 // ===== 初始化 =====
 window.onload = async function() {
+    // 设置Session选择器默认值
+    const sessionSelector = document.getElementById('sessionSelector');
+    if (sessionSelector) {
+        sessionSelector.value = CONFIG.SESSION_ID;
+    }
+    
     // 初始化Supabase
     supabase = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
     
@@ -1371,6 +1386,22 @@ function displayAIResults(data) {
 }
 
 // ===== 刷新数据 =====
+// ===== 切换Session =====
+function switchSession() {
+    const selector = document.getElementById('sessionSelector');
+    const newSessionId = selector.value;
+    CONFIG.SESSION_ID = newSessionId;
+    console.log('切换到Session:', newSessionId);
+    
+    // 清空当前数据
+    statsData = null;
+    analysisData = null;
+    
+    // 重新加载数据
+    loadData();
+    loadExistingAnalysis();
+}
+
 function refreshData() {
     loadData();
     loadExistingAnalysis();
