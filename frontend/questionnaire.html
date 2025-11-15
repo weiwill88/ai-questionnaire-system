@@ -688,6 +688,7 @@ function handleMultipleChoice(name, maxSelections, counterId) {
 // ===== 更新进度 =====
 function updateProgress() {
     let completed = 0;
+    let details = [];
     
     // Q1-Q7, Q9 单选题
     ['q1_industry', 'q2_role', 'q3_digital_habit', 'q4_ai_self_position', 
@@ -698,14 +699,23 @@ function updateProgress() {
             if (name === 'q1_industry' && checked.value === 'other') {
                 if (document.getElementById('q1_industry_other').value.trim()) {
                     completed++;
+                    details.push(`${name}: ✓ (其他已填)`);
+                } else {
+                    details.push(`${name}: ✗ (其他未填)`);
                 }
             } else if (name === 'q2_role' && checked.value === 'other') {
                 if (document.getElementById('q2_role_other').value.trim()) {
                     completed++;
+                    details.push(`${name}: ✓ (其他已填)`);
+                } else {
+                    details.push(`${name}: ✗ (其他未填)`);
                 }
             } else {
                 completed++;
+                details.push(`${name}: ✓`);
             }
+        } else {
+            details.push(`${name}: ✗ (未选择)`);
         }
     });
 
@@ -713,6 +723,9 @@ function updateProgress() {
     const q8Checked = document.querySelectorAll('input[name="q8_pain_points"]:checked');
     if (q8Checked.length >= 1 && q8Checked.length <= 3) {
         completed++;
+        details.push(`q8_pain_points: ✓ (已选${q8Checked.length}项)`);
+    } else {
+        details.push(`q8_pain_points: ✗ (已选${q8Checked.length}项，需要1-3项)`);
     }
 
     // 更新进度显示
@@ -724,13 +737,16 @@ function updateProgress() {
         submitBtn.disabled = false;
         submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
         submitBtn.classList.add('hover:from-blue-700', 'hover:to-indigo-700');
+        console.log('✅ 全部完成，可以提交！');
     } else {
         submitBtn.disabled = true;
         submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
         submitBtn.classList.remove('hover:from-blue-700', 'hover:to-indigo-700');
+        console.log(`⏳ 还差 ${9 - completed} 题`);
     }
     
     console.log('当前进度:', completed, '/ 9');
+    console.log('详细情况:', details);
 }
 
 // ===== 检查是否已提交 =====
