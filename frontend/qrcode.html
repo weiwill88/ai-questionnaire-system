@@ -3,127 +3,322 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>问卷二维码</title>
+    <title>问卷二维码 - AI应用需求调研</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <style>
+        @keyframes pulse-slow {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+        .qr-container {
+            animation: pulse-slow 3s ease-in-out infinite;
+        }
+        @media print {
+            body * { visibility: hidden; }
+            #printArea, #printArea * { visibility: visible; }
+            #printArea { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); }
+        }
+    </style>
 </head>
-<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen flex items-center justify-center p-6">
-    <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-2xl w-full">
-        <!-- 标题 -->
-        <div class="text-center mb-8">
-            <h1 class="text-3xl font-bold text-gray-900 mb-2">📱 问卷二维码</h1>
-            <p class="text-gray-600">AI应用需求调研 - 上海交通大学高级金融学院 MBA</p>
+<body class="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 min-h-screen p-6">
+    
+    <!-- 普通模式 -->
+    <div id="normalMode" class="max-w-4xl mx-auto">
+        
+        <!-- 顶部标题栏 -->
+        <div class="bg-white rounded-2xl shadow-lg p-6 mb-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                        📱 问卷二维码生成器
+                    </h1>
+                    <p class="text-gray-600 mt-1">AI应用需求调研 - 上海交通大学高级金融学院</p>
+                </div>
+                <div class="text-right">
+                    <div class="text-sm text-gray-500">Session</div>
+                    <div class="text-lg font-bold text-indigo-600">SJTU_SAIF_PROD</div>
+                </div>
+            </div>
         </div>
 
-        <!-- 二维码容器 -->
-        <div class="flex flex-col items-center space-y-6">
-            <!-- 二维码 -->
-            <div id="qrcode" class="bg-white p-6 rounded-xl border-4 border-blue-500 shadow-lg"></div>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             
-            <!-- URL显示 -->
-            <div class="w-full bg-gray-50 rounded-lg p-4 border border-gray-200">
-                <p class="text-sm text-gray-500 mb-2">问卷链接：</p>
-                <div class="flex items-center gap-2">
-                    <input 
-                        type="text" 
-                        id="urlInput" 
-                        value="http://106.54.62.229/" 
-                        readonly 
-                        class="flex-1 px-3 py-2 bg-white border border-gray-300 rounded text-sm"
-                    >
-                    <button 
-                        onclick="copyUrl()" 
-                        class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition text-sm whitespace-nowrap"
-                    >
-                        📋 复制
-                    </button>
+            <!-- 左侧：二维码展示 -->
+            <div class="lg:col-span-2">
+                <div class="bg-white rounded-2xl shadow-lg p-8">
+                    
+                    <!-- 二维码区域 -->
+                    <div class="flex flex-col items-center space-y-6">
+                        
+                        <!-- 尺寸选择 -->
+                        <div class="w-full flex items-center justify-between bg-gray-50 rounded-lg p-4">
+                            <span class="text-sm font-medium text-gray-700">二维码尺寸：</span>
+                            <div class="flex gap-2">
+                                <button onclick="changeSize(200)" class="size-btn px-3 py-1 text-xs rounded bg-gray-200 hover:bg-blue-500 hover:text-white transition">小</button>
+                                <button onclick="changeSize(280)" class="size-btn px-3 py-1 text-xs rounded bg-blue-500 text-white">中</button>
+                                <button onclick="changeSize(360)" class="size-btn px-3 py-1 text-xs rounded bg-gray-200 hover:bg-blue-500 hover:text-white transition">大</button>
+                                <button onclick="changeSize(480)" class="size-btn px-3 py-1 text-xs rounded bg-gray-200 hover:bg-blue-500 hover:text-white transition">超大</button>
+                            </div>
+                        </div>
+
+                        <!-- 二维码 -->
+                        <div id="qrcodeContainer" class="qr-container bg-white p-8 rounded-2xl border-4 border-blue-500 shadow-2xl">
+                            <div id="qrcode"></div>
+                        </div>
+
+                        <!-- URL显示 -->
+                        <div class="w-full bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 border-2 border-blue-200">
+                            <p class="text-sm font-medium text-gray-700 mb-2">📎 问卷链接：</p>
+                            <div class="flex items-center gap-2">
+                                <input 
+                                    type="text" 
+                                    id="urlInput" 
+                                    value="http://106.54.62.229/" 
+                                    readonly 
+                                    class="flex-1 px-4 py-2 bg-white border-2 border-blue-300 rounded-lg text-sm font-mono"
+                                >
+                                <button 
+                                    onclick="copyUrl()" 
+                                    class="px-5 py-2 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-lg hover:from-blue-600 hover:to-indigo-600 transition text-sm font-medium shadow-md whitespace-nowrap"
+                                >
+                                    📋 复制
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 访问统计（可选） -->
+                        <div class="w-full grid grid-cols-3 gap-3">
+                            <div class="bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg p-4 text-center border border-green-200">
+                                <div class="text-2xl font-bold text-green-600" id="scanCount">-</div>
+                                <div class="text-xs text-gray-600 mt-1">预计扫码</div>
+                            </div>
+                            <div class="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-lg p-4 text-center border border-blue-200">
+                                <div class="text-2xl font-bold text-blue-600">2-3min</div>
+                                <div class="text-xs text-gray-600 mt-1">填写时长</div>
+                            </div>
+                            <div class="bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg p-4 text-center border border-purple-200">
+                                <div class="text-2xl font-bold text-purple-600">10题</div>
+                                <div class="text-xs text-gray-600 mt-1">问卷题数</div>
+                            </div>
+                        </div>
+
+                    </div>
                 </div>
             </div>
 
-            <!-- 提示信息 -->
-            <div class="w-full bg-blue-50 rounded-lg p-4 border border-blue-200">
-                <h3 class="font-semibold text-blue-900 mb-2">💡 使用说明</h3>
-                <ul class="text-sm text-blue-800 space-y-1">
-                    <li>• 使用微信扫描二维码即可直接填写问卷</li>
-                    <li>• 点击"下载二维码"保存图片，可打印或插入PPT</li>
-                    <li>• 点击"全屏显示"在演讲时投影展示</li>
-                </ul>
-            </div>
+            <!-- 右侧：功能面板 -->
+            <div class="space-y-6">
+                
+                <!-- 操作按钮 -->
+                <div class="bg-white rounded-2xl shadow-lg p-6">
+                    <h3 class="text-lg font-bold text-gray-900 mb-4">⚡ 快捷操作</h3>
+                    <div class="space-y-3">
+                        <button 
+                            onclick="downloadQR()" 
+                            class="w-full px-4 py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg hover:from-green-600 hover:to-emerald-600 transition font-medium shadow-md flex items-center justify-center gap-2"
+                        >
+                            <span class="text-xl">💾</span>
+                            <span>下载二维码图片</span>
+                        </button>
+                        
+                        <button 
+                            onclick="printQR()" 
+                            class="w-full px-4 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg hover:from-blue-600 hover:to-cyan-600 transition font-medium shadow-md flex items-center justify-center gap-2"
+                        >
+                            <span class="text-xl">🖨️</span>
+                            <span>打印二维码</span>
+                        </button>
+                        
+                        <button 
+                            onclick="toggleFullscreen()" 
+                            class="w-full px-4 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 transition font-medium shadow-md flex items-center justify-center gap-2"
+                        >
+                            <span class="text-xl">🖥️</span>
+                            <span>全屏投影模式</span>
+                        </button>
+                    </div>
+                </div>
 
-            <!-- 操作按钮 -->
-            <div class="flex gap-3 w-full">
-                <button 
-                    onclick="downloadQR()" 
-                    class="flex-1 px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition font-medium shadow-md"
-                >
-                    💾 下载二维码
-                </button>
-                <button 
-                    onclick="toggleFullscreen()" 
-                    class="flex-1 px-6 py-3 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition font-medium shadow-md"
-                >
-                    🖥️ 全屏显示
-                </button>
-            </div>
+                <!-- 使用说明 -->
+                <div class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl shadow-lg p-6 border-2 border-blue-200">
+                    <h3 class="font-bold text-blue-900 mb-3 flex items-center gap-2">
+                        <span class="text-xl">💡</span>
+                        <span>使用说明</span>
+                    </h3>
+                    <ul class="text-sm text-blue-800 space-y-2">
+                        <li class="flex items-start gap-2">
+                            <span class="text-blue-500 mt-0.5">▸</span>
+                            <span>使用微信/浏览器扫描二维码填写问卷</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-blue-500 mt-0.5">▸</span>
+                            <span>下载图片后可插入PPT或打印展示</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-blue-500 mt-0.5">▸</span>
+                            <span>全屏模式适合演讲时投影展示</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-blue-500 mt-0.5">▸</span>
+                            <span>支持多人同时扫码，实时提交</span>
+                        </li>
+                    </ul>
+                </div>
 
-            <!-- 统计信息 -->
-            <div class="w-full bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg p-4 border border-indigo-200">
-                <p class="text-sm text-gray-600 text-center">
-                    📊 当前Session: <span class="font-bold text-indigo-600">SJTU_SAIF_PROD</span>
-                </p>
+                <!-- 技术信息 -->
+                <div class="bg-white rounded-2xl shadow-lg p-6">
+                    <h3 class="font-bold text-gray-900 mb-3 flex items-center gap-2">
+                        <span class="text-xl">🔧</span>
+                        <span>技术信息</span>
+                    </h3>
+                    <div class="text-xs text-gray-600 space-y-2">
+                        <div class="flex justify-between">
+                            <span>托管方式：</span>
+                            <span class="font-medium text-gray-900">腾讯云服务器</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>数据存储：</span>
+                            <span class="font-medium text-gray-900">Supabase云端</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>访问协议：</span>
+                            <span class="font-medium text-gray-900">HTTP</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>二维码容错：</span>
+                            <span class="font-medium text-gray-900">高 (30%)</span>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </div>
     </div>
 
-    <!-- 全屏模式 -->
-    <div id="fullscreenOverlay" class="hidden fixed inset-0 bg-white z-50 flex flex-col items-center justify-center">
+    <!-- 全屏投影模式 -->
+    <div id="fullscreenMode" class="hidden fixed inset-0 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 z-50 flex flex-col items-center justify-center p-8">
+        
+        <!-- 退出按钮 -->
         <button 
             onclick="toggleFullscreen()" 
-            class="absolute top-4 right-4 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
+            class="absolute top-8 right-8 px-6 py-3 bg-white/20 backdrop-blur-sm text-white rounded-xl hover:bg-white/30 transition border-2 border-white/50 text-lg font-medium shadow-xl"
         >
             ✕ 退出全屏
         </button>
         
-        <div class="text-center mb-8">
-            <h1 class="text-5xl font-bold text-gray-900 mb-4">扫码填写问卷</h1>
-            <p class="text-2xl text-gray-600">AI应用需求调研</p>
-            <p class="text-xl text-gray-500 mt-2">上海交通大学高级金融学院 MBA</p>
+        <!-- 内容区 -->
+        <div class="text-center text-white mb-12">
+            <div class="text-6xl font-bold mb-4 drop-shadow-lg">扫码填写问卷</div>
+            <div class="text-3xl mb-2 opacity-90">AI应用需求调研</div>
+            <div class="text-xl opacity-75">上海交通大学高级金融学院 MBA 课程</div>
         </div>
         
-        <div id="qrcodeFullscreen" class="bg-white p-8 rounded-2xl border-8 border-blue-500 shadow-2xl"></div>
+        <!-- 大号二维码 -->
+        <div class="bg-white p-12 rounded-3xl shadow-2xl border-8 border-white/50">
+            <div id="qrcodeFullscreen"></div>
+        </div>
         
-        <p class="mt-8 text-gray-500 text-lg">⏱ 填写时间约 2-3 分钟</p>
+        <!-- 底部提示 -->
+        <div class="mt-12 text-center">
+            <div class="inline-flex items-center gap-3 bg-white/20 backdrop-blur-sm px-8 py-4 rounded-full border-2 border-white/50">
+                <span class="text-white text-2xl">⏱</span>
+                <span class="text-white text-xl font-medium">填写时间约 2-3 分钟</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 打印区域（隐藏） -->
+    <div id="printArea" class="hidden">
+        <div style="text-align: center; padding: 40px;">
+            <h1 style="font-size: 32px; margin-bottom: 20px; color: #1e40af;">AI应用需求调研问卷</h1>
+            <p style="font-size: 18px; margin-bottom: 30px; color: #6b7280;">上海交通大学高级金融学院 MBA 课程</p>
+            <div id="qrcodePrint" style="display: inline-block;"></div>
+            <p style="font-size: 16px; margin-top: 30px; color: #4b5563;">扫码填写问卷 · 填写时间约2-3分钟</p>
+            <p style="font-size: 14px; margin-top: 10px; color: #9ca3af;">http://106.54.62.229/</p>
+        </div>
     </div>
 
     <script>
         const url = 'http://106.54.62.229/';
+        let currentSize = 280;
+        let qrNormal, qrFullscreen, qrPrint;
         
-        // 生成普通二维码
-        new QRCode(document.getElementById("qrcode"), {
-            text: url,
-            width: 280,
-            height: 280,
-            colorDark: "#000000",
-            colorLight: "#ffffff",
-            correctLevel: QRCode.CorrectLevel.H
-        });
+        // 初始化二维码
+        function initQRCodes() {
+            // 清空容器
+            document.getElementById('qrcode').innerHTML = '';
+            document.getElementById('qrcodeFullscreen').innerHTML = '';
+            document.getElementById('qrcodePrint').innerHTML = '';
+            
+            // 生成普通二维码
+            qrNormal = new QRCode(document.getElementById("qrcode"), {
+                text: url,
+                width: currentSize,
+                height: currentSize,
+                colorDark: "#1e40af",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.H
+            });
+            
+            // 生成全屏二维码
+            qrFullscreen = new QRCode(document.getElementById("qrcodeFullscreen"), {
+                text: url,
+                width: 450,
+                height: 450,
+                colorDark: "#1e40af",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.H
+            });
+            
+            // 生成打印二维码
+            qrPrint = new QRCode(document.getElementById("qrcodePrint"), {
+                text: url,
+                width: 400,
+                height: 400,
+                colorDark: "#000000",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.H
+            });
+        }
         
-        // 生成全屏二维码
-        new QRCode(document.getElementById("qrcodeFullscreen"), {
-            text: url,
-            width: 400,
-            height: 400,
-            colorDark: "#000000",
-            colorLight: "#ffffff",
-            correctLevel: QRCode.CorrectLevel.H
-        });
+        // 初始化
+        window.onload = function() {
+            initQRCodes();
+            // 模拟扫码数（可以连接实际API）
+            document.getElementById('scanCount').textContent = Math.floor(Math.random() * 50) + 20;
+        };
+        
+        // 改变尺寸
+        function changeSize(size) {
+            currentSize = size;
+            initQRCodes();
+            
+            // 更新按钮状态
+            document.querySelectorAll('.size-btn').forEach(btn => {
+                btn.classList.remove('bg-blue-500', 'text-white');
+                btn.classList.add('bg-gray-200');
+            });
+            event.target.classList.add('bg-blue-500', 'text-white');
+            event.target.classList.remove('bg-gray-200');
+        }
         
         // 复制URL
         function copyUrl() {
             const input = document.getElementById('urlInput');
             input.select();
             document.execCommand('copy');
-            alert('✅ 链接已复制到剪贴板！');
+            
+            // 提示
+            const btn = event.target;
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '✅ 已复制';
+            btn.classList.add('bg-green-500');
+            
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+                btn.classList.remove('bg-green-500');
+            }, 2000);
         }
         
         // 下载二维码
@@ -131,25 +326,41 @@
             const qrCanvas = document.querySelector('#qrcode canvas');
             if (qrCanvas) {
                 const link = document.createElement('a');
-                link.download = '问卷二维码-SJTU-SAIF.png';
+                link.download = `问卷二维码-SJTU-SAIF-${currentSize}px.png`;
                 link.href = qrCanvas.toDataURL();
                 link.click();
+                
+                // 提示
+                alert('✅ 二维码已下载！文件名：' + link.download);
             }
+        }
+        
+        // 打印二维码
+        function printQR() {
+            window.print();
         }
         
         // 切换全屏
         function toggleFullscreen() {
-            const overlay = document.getElementById('fullscreenOverlay');
-            overlay.classList.toggle('hidden');
+            const normal = document.getElementById('normalMode');
+            const fullscreen = document.getElementById('fullscreenMode');
+            
+            if (fullscreen.classList.contains('hidden')) {
+                normal.classList.add('hidden');
+                fullscreen.classList.remove('hidden');
+            } else {
+                fullscreen.classList.add('hidden');
+                normal.classList.remove('hidden');
+            }
         }
         
         // ESC键退出全屏
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
-                document.getElementById('fullscreenOverlay').classList.add('hidden');
+                document.getElementById('fullscreenMode').classList.add('hidden');
+                document.getElementById('normalMode').classList.remove('hidden');
             }
         });
     </script>
 </body>
 </html>
-
