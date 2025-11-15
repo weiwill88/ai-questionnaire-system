@@ -538,6 +538,15 @@ function updateStatCards(stats) {
 
 // ===== 更新所有图表 =====
 function updateAllCharts(stats) {
+    console.log('📊 更新图表数据:', stats);
+    
+    // 确保图表已初始化
+    if (!charts.industry || !charts.role) {
+        console.warn('⚠️ 图表未初始化，延迟500ms后重试');
+        setTimeout(() => updateAllCharts(stats), 500);
+        return;
+    }
+    
     // Tab1图表
     updateIndustryChart(stats.industries || {});
     updateRoleChart(stats.roles || {});
@@ -550,14 +559,33 @@ function updateAllCharts(stats) {
     updateOrgChart(stats.org_stages || {});
     updatePersonalChart(stats.personal_roles || {});
     updateConstraintsChart(stats.constraints || {});
+    
+    // 强制重绘所有图表
+    setTimeout(() => {
+        Object.values(charts).forEach(chart => {
+            if (chart && chart.resize) {
+                chart.resize();
+            }
+        });
+    }, 100);
 }
 
 // ===== 行业分布图（饼图）=====
 function updateIndustryChart(data) {
+    if (!data || Object.keys(data).length === 0) {
+        console.warn('⚠️ 行业数据为空');
+        charts.industry.setOption({
+            title: { text: '暂无数据', left: 'center', top: 'center', textStyle: { color: '#ccc', fontSize: 16 } }
+        });
+        return;
+    }
+    
     const chartData = Object.entries(data).map(([name, value]) => ({
         name: formatIndustry(name),
         value
     }));
+    
+    console.log('📊 行业分布数据:', chartData);
     
     charts.industry.setOption({
         tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
@@ -582,8 +610,18 @@ function updateIndustryChart(data) {
 
 // ===== 角色分布图（柱状图）=====
 function updateRoleChart(data) {
+    if (!data || Object.keys(data).length === 0) {
+        console.warn('⚠️ 角色数据为空');
+        charts.role.setOption({
+            title: { text: '暂无数据', left: 'center', top: 'center', textStyle: { color: '#ccc', fontSize: 16 } }
+        });
+        return;
+    }
+    
     const labels = Object.keys(data).map(formatRole);
     const values = Object.values(data);
+    
+    console.log('📊 角色分布数据:', { labels, values });
     
     charts.role.setOption({
         tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
