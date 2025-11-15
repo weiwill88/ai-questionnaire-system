@@ -804,14 +804,28 @@ async function generateFingerprint() {
     
     const fingerprint = components.join('|');
     
-    // 使用Web Crypto API生成SHA-256哈希
-    const encoder = new TextEncoder();
-    const data = encoder.encode(fingerprint);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    // 尝试使用Web Crypto API生成SHA-256哈希（HTTPS环境）
+    try {
+        if (window.crypto && window.crypto.subtle) {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(fingerprint);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+            return hashHex;
+        }
+    } catch (e) {
+        console.warn('Web Crypto API不可用，使用简单hash:', e);
+    }
     
-    return hashHex;
+    // Fallback: 使用简单的字符串hash（HTTP环境）
+    let hash = 0;
+    for (let i = 0; i < fingerprint.length; i++) {
+        const char = fingerprint.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash; // Convert to 32bit integer
+    }
+    return Math.abs(hash).toString(16);
 }
 
 // ===== 获取设备类型 =====
